@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Mixamo- Three.js</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+</head>
+
+<body>
+
+    <script src="js/three.js"></script>
+    <script src="js/inflate.min.js"></script>
+    <script src="js/FBXLoader.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/WebGL.js"></script>
+    <script src="js/stats.min.js"></script>
+    <script>
+        if (WEBGL.isWebGLAvailable() === false) {
+            document.body.appendChild(WEBGL.getWebGLErrorMessage());
+        }
+        var container, controls;
+        var camera, scene, renderer, light;
+        var clock = new THREE.Clock();
+        var mixers = [];
+        var mixers2 = [];
+        init();
+        animate();
+
+        function init() {
+            container = document.createElement('div');
+            document.body.appendChild(container);
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+            camera.position.set(150, 200, 800);
+            controls = new THREE.OrbitControls(camera);
+            controls.target.set(0, 100, 0);
+            controls.update();
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xa0a0a0);
+            scene.fog = new THREE.Fog(0xa0a0a0, 100, 10000);
+            light = new THREE.HemisphereLight(0xffffff, 0x444444);
+            light.position.set(0, 200, 0);
+            scene.add(light);
+
+            light = new THREE.DirectionalLight(0xffffff);
+            light.position.set(0, 200, 100);
+            light.castShadow = true;
+            light.shadow.camera.top = 180;
+            light.shadow.camera.bottom = -100;
+            light.shadow.camera.left = -120;
+            light.shadow.camera.right = 120;
+            scene.add(light);
+           
+            var mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), new THREE.MeshPhongMaterial({
+                color: 0x999999,
+                depthWrite: false
+            }));
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+
+            var grid = new THREE.GridHelper(2000, 20, 0xff0000, 0x000000);
+            grid.material.opacity = 0.2;
+            grid.material.transparent = true;
+            scene.add(grid)   
+           
+
+            var loader2 = new THREE.FBXLoader();
+            loader2.load('models/Catwalk.fbx', function(object2) {
+                object2.mixer = new THREE.AnimationMixer(object2);
+                mixers.push(object2.mixer);
+                var action = object2.mixer.clipAction(object2.animations[0]);
+                action.play();
+                object2.traverse(function(child) {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                object2.scale.set(3, 3, 3);
+                object2.Name = 'personaje';
+                scene.add(object2);
+
+            });
+            
+
+            var objeto = scene.getObjectByName("personaje");
+
+            scene.add(objeto);
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+
+            
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+            window.addEventListener('resize', onWindowResize, false);
+            
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            if (mixers.length > 0) {
+                for (var i = 0; i < mixers.length; i++) {
+
+                    mixers[i].update(clock.getDelta());
+
+                }
+
+            }/*else {
+                if (mixers2.length > 0) {
+                for (var i = 0; i < mixers2.length; i++) {
+
+                    mixers2[i].update(clock.getDelta());
+
+                }
+            }
+            }*/
+            
+            renderer.render(scene, camera);           
+        }
+
+    </script>
+</body>
+
+</html>
